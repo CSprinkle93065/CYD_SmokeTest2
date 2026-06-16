@@ -1,0 +1,111 @@
+@startuml
+!theme plain
+title CYD_SmokeTest2 Coin Toss State Machine
+
+' -----------------------------------------------------------------------------
+' Top-level states (flattened; no composite states, no terminal [*])
+' -----------------------------------------------------------------------------
+[*] --> Initializing : boot [framework_ready && libs_ready] / app_init()
+
+Initializing --> InitDisplay : evSerialOk [serial_required] / init_serial()
+
+InitDisplay --> InitTouch : evDisplayOk [TFT_eSPI_present] / init_tft()
+InitDisplay --> Error_Display : evDisplayFail [TFT_eSPI_missing || !display_ok] / on_display_init_failed()
+
+InitTouch --> Ready : evTouchOk [XPT2046_present] / ui_create()
+InitTouch --> Error_Touch : evTouchFail [XPT2046_missing || !touch_ok] / on_touch_init_failed()
+
+Ready --> Flipping : evButtonClick [btnFlip_enabled] / on_flip_button_clicked()
+Flipping --> ResultShown : evFlipComplete [esp_random_ok] / coin_flip(); ui_set_result(); log_coin_result()
+ResultShown --> Flipping : evButtonClick [btnFlip_enabled] / on_flip_button_clicked()
+ResultShown --> Ready : evReset [ui_ready] / ui_set_result("Tap Flip")
+
+Ready --> Error_Display : evDisplayFail [runtime_display_fail] / on_display_init_failed()
+Ready --> Error_Touch : evTouchFail [runtime_touch_fail] / on_touch_init_failed()
+
+Error_Display --> Halted : evReboot [reboot_available] / reboot()
+Error_Touch --> Halted : evReboot [reboot_available] / reboot()
+
+' -----------------------------------------------------------------------------
+' UI-to-State contract note blocks
+' -----------------------------------------------------------------------------
+note right of Initializing
+  **UI-to-State Contract — Initializing**
+  - lblTitle: hidden
+  - lblResult: hidden
+  - btnFlip: hidden, enabled = false
+  - lblError: hidden
+  - screen: black
+end note
+
+note right of InitDisplay
+  **UI-to-State Contract — InitDisplay**
+  - lblTitle: hidden
+  - lblResult: hidden
+  - btnFlip: hidden, enabled = false
+  - lblError: hidden
+  - screen: black
+end note
+
+note right of InitTouch
+  **UI-to-State Contract — InitTouch**
+  - lblTitle: hidden
+  - lblResult: hidden
+  - btnFlip: hidden, enabled = false
+  - lblError: hidden
+  - screen: black
+end note
+
+note right of Ready
+  **UI-to-State Contract — Ready**
+  - lblTitle: visible, text = "Coin Toss"
+  - lblResult: visible, text = "Tap Flip"
+  - btnFlip: visible, enabled = true
+  - lblError: hidden
+  --
+  **Simulation limitation**
+  The `ev_flip_pressed` transition (bound to `LV_EVENT_CLICKED` on `btnFlip`) is **not automatable in Wokwi** because the `wokwi-xpt2046` part type is unsupported by the Wokwi CLI. Verify this transition on physical CYD2USB hardware.
+end note
+
+note right of ResultShown
+  **UI-to-State Contract — ResultShown**
+  - lblTitle: visible, text = "Coin Toss"
+  - lblResult: visible, text = "Heads" or "Tails"
+  - btnFlip: visible, enabled = true
+  - lblError: hidden
+end note
+
+note right of Flipping
+  **UI-to-State Contract — Flipping**
+  - lblTitle: visible, text = "Coin Toss"
+  - lblResult: visible, text = "..."
+  - btnFlip: visible, enabled = false
+  - lblError: hidden
+end note
+
+note right of Error_Display
+  **UI-to-State Contract — Error_Display**
+  - lblTitle: hidden
+  - lblResult: hidden
+  - btnFlip: hidden, enabled = false
+  - lblError: visible, red, full-screen error code
+end note
+
+note right of Error_Touch
+  **UI-to-State Contract — Error_Touch**
+  - lblTitle: hidden
+  - lblResult: hidden
+  - btnFlip: hidden, enabled = false
+  - lblError: visible, red, full-screen error code
+end note
+
+note right of Halted
+  **UI-to-State Contract — Halted**
+  - lblTitle: hidden
+  - lblResult: hidden
+  - btnFlip: hidden, enabled = false
+  - lblError: hidden
+  - screen: black
+end note
+
+@enduml

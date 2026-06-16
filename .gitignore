@@ -1,0 +1,25 @@
+# Build artifacts
+.pio/
+dist/
+build/
+*.spec
+
+# Temporary files
+.tmp/
+*.tmp
+
+# Logs
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

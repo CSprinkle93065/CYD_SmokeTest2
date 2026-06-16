@@ -1,0 +1,283 @@
+{
+  "workflow_id": "wvc_20260616_043904",
+  "project_name": "CYD_SmokeTest2",
+  "version": "0.1.0",
+  "contract_type": "UI-to-State binding",
+  "description": "Binds every LVGL control defined in definition.md §2 to states, actions, transitions, and visibility/enablement rules for the CYD_SmokeTest2 coin-toss app.",
+  "lvgl_version": "8.4.0",
+  "ui_controls": [
+    "lblTitle",
+    "lblResult",
+    "btnFlip",
+    "lblError"
+  ],
+  "states": [
+    "Initializing",
+    "InitDisplay",
+    "InitTouch",
+    "Ready",
+    "Flipping",
+    "ResultShown",
+    "Error_Display",
+    "Error_Touch",
+    "Halted"
+  ],
+  "bindings": {
+    "lblTitle": {
+      "type": "lv_label",
+      "states": {
+        "Initializing": { "visible": false, "enabled": false, "text": null },
+        "InitDisplay": { "visible": false, "enabled": false, "text": null },
+        "InitTouch": { "visible": false, "enabled": false, "text": null },
+        "Ready": { "visible": true, "enabled": false, "text": "Coin Toss" },
+        "Flipping": { "visible": true, "enabled": false, "text": "Coin Toss" },
+        "ResultShown": { "visible": true, "enabled": false, "text": "Coin Toss" },
+        "Error_Display": { "visible": false, "enabled": false, "text": null },
+        "Error_Touch": { "visible": false, "enabled": false, "text": null },
+        "Halted": { "visible": false, "enabled": false, "text": null }
+      },
+      "actions": {
+        "ui_create": "Create lblTitle and set static text to 'Coin Toss'",
+        "ui_show_error": "Hide lblTitle",
+        "ui_reset": "Restore lblTitle visibility and text 'Coin Toss'"
+      },
+      "transitions": [
+        "[*] -> Initializing",
+        "Initializing -> InitDisplay",
+        "InitDisplay -> InitTouch",
+        "InitDisplay -> Error_Display",
+        "InitTouch -> Ready",
+        "InitTouch -> Error_Touch",
+        "Ready -> Flipping",
+        "Flipping -> ResultShown",
+        "ResultShown -> Flipping",
+        "ResultShown -> Ready",
+        "Ready -> Error_Display",
+        "Ready -> Error_Touch",
+        "Error_Display -> Halted",
+        "Error_Touch -> Halted"
+      ]
+    },
+    "lblResult": {
+      "type": "lv_label",
+      "states": {
+        "Initializing": { "visible": false, "enabled": false, "text": null },
+        "InitDisplay": { "visible": false, "enabled": false, "text": null },
+        "InitTouch": { "visible": false, "enabled": false, "text": null },
+        "Ready": { "visible": true, "enabled": false, "text": "Tap Flip" },
+        "Flipping": { "visible": true, "enabled": false, "text": "..." },
+        "ResultShown": { "visible": true, "enabled": false, "text": "Heads" },
+        "Error_Display": { "visible": false, "enabled": false, "text": null },
+        "Error_Touch": { "visible": false, "enabled": false, "text": null },
+        "Halted": { "visible": false, "enabled": false, "text": null }
+      },
+      "actions": {
+        "ui_create": "Create lblResult and set initial text to 'Tap Flip'",
+        "ui_set_result": "Update lblResult text to 'Heads' or 'Tails'",
+        "ui_show_error": "Hide lblResult",
+        "ui_reset": "Restore lblResult visibility and text 'Tap Flip'"
+      },
+      "transitions": [
+        "[*] -> Initializing",
+        "Initializing -> InitDisplay",
+        "InitDisplay -> InitTouch",
+        "InitDisplay -> Error_Display",
+        "InitTouch -> Ready",
+        "InitTouch -> Error_Touch",
+        "Ready -> Flipping",
+        "Flipping -> ResultShown",
+        "ResultShown -> Flipping",
+        "ResultShown -> Ready",
+        "Ready -> Error_Display",
+        "Ready -> Error_Touch",
+        "Error_Display -> Halted",
+        "Error_Touch -> Halted"
+      ]
+    },
+    "btnFlip": {
+      "type": "lv_btn",
+      "states": {
+        "Initializing": { "visible": false, "enabled": false, "text": null },
+        "InitDisplay": { "visible": false, "enabled": false, "text": null },
+        "InitTouch": { "visible": false, "enabled": false, "text": null },
+        "Ready": { "visible": true, "enabled": true, "text": "Flip Coin" },
+        "Flipping": { "visible": true, "enabled": false, "text": "Flip Coin" },
+        "ResultShown": { "visible": true, "enabled": true, "text": "Flip Coin" },
+        "Error_Display": { "visible": false, "enabled": false, "text": null },
+        "Error_Touch": { "visible": false, "enabled": false, "text": null },
+        "Halted": { "visible": false, "enabled": false, "text": null }
+      },
+      "actions": {
+        "ui_create": "Create btnFlip with label 'Flip Coin' and bind LV_EVENT_CLICKED to EV_FLIP_PRESSED (dispatched as on_flip_button_clicked())",
+        "on_flip_button_clicked": "Transition Ready -> Flipping or ResultShown -> Flipping",
+        "ui_show_error": "Hide btnFlip and disable input",
+        "ui_reset": "Restore btnFlip visibility and enable input"
+      },
+      "transitions": [
+        "Ready -> Flipping",
+        "ResultShown -> Flipping"
+      ]
+    },
+    "lblError": {
+      "type": "lv_label",
+      "states": {
+        "Initializing": { "visible": false, "enabled": false, "text": null, "style": null },
+        "InitDisplay": { "visible": false, "enabled": false, "text": null, "style": null },
+        "InitTouch": { "visible": false, "enabled": false, "text": null, "style": null },
+        "Ready": { "visible": false, "enabled": false, "text": null, "style": null },
+        "Flipping": { "visible": false, "enabled": false, "text": null, "style": null },
+        "ResultShown": { "visible": false, "enabled": false, "text": null, "style": null },
+        "Error_Display": { "visible": true, "enabled": false, "text": "ERR: Display init failed", "style": "red, full-screen" },
+        "Error_Touch": { "visible": true, "enabled": false, "text": "ERR: Touch init failed", "style": "red, full-screen" },
+        "Halted": { "visible": false, "enabled": false, "text": null, "style": null }
+      },
+      "actions": {
+        "ui_show_error": "Clear screen and show lblError with red full-screen error text",
+        "ui_create": "Do not create lblError during normal UI creation"
+      },
+      "transitions": [
+        "InitDisplay -> Error_Display",
+        "InitTouch -> Error_Touch",
+        "Ready -> Error_Display",
+        "Ready -> Error_Touch",
+        "Error_Display -> Halted",
+        "Error_Touch -> Halted"
+      ]
+    }
+  },
+  "transition_table": [
+    {
+      "from": "[*]",
+      "to": "Initializing",
+      "event": "boot",
+      "guard": "framework_ready && libs_ready",
+      "action": "app_init()",
+      "guard_facts": [
+        "dependency_manifest.framework.name == 'Arduino-ESP32' && present == true",
+        "dependency_manifest.libraries[lvgl].present == true",
+        "dependency_manifest.libraries[TFT_eSPI].present == true",
+        "dependency_manifest.libraries[XPT2046_Touchscreen].present == true"
+      ]
+    },
+    {
+      "from": "Initializing",
+      "to": "InitDisplay",
+      "event": "evSerialOk",
+      "guard": "serial_required",
+      "action": "init_serial()",
+      "guard_facts": ["runtime: serial port available at 115200 baud"]
+    },
+    {
+      "from": "InitDisplay",
+      "to": "InitTouch",
+      "event": "evDisplayOk",
+      "guard": "TFT_eSPI_present",
+      "action": "init_tft()",
+      "guard_facts": ["dependency_manifest.libraries[TFT_eSPI].present == true"]
+    },
+    {
+      "from": "InitDisplay",
+      "to": "Error_Display",
+      "event": "evDisplayFail",
+      "guard": "TFT_eSPI_missing || !display_ok",
+      "action": "on_display_init_failed()",
+      "guard_facts": [
+        "dependency_manifest.libraries[TFT_eSPI].present == false",
+        "runtime: TFT_eSPI begin() returns false"
+      ]
+    },
+    {
+      "from": "InitTouch",
+      "to": "Ready",
+      "event": "evTouchOk",
+      "guard": "XPT2046_present",
+      "action": "ui_create()",
+      "guard_facts": ["dependency_manifest.libraries[XPT2046_Touchscreen].present == true"]
+    },
+    {
+      "from": "InitTouch",
+      "to": "Error_Touch",
+      "event": "evTouchFail",
+      "guard": "XPT2046_missing || !touch_ok",
+      "action": "on_touch_init_failed()",
+      "guard_facts": [
+        "dependency_manifest.libraries[XPT2046_Touchscreen].present == false",
+        "runtime: XPT2046 begin() returns false"
+      ]
+    },
+    {
+      "from": "Ready",
+      "to": "Flipping",
+      "event": "evButtonClick",
+      "guard": "btnFlip_enabled",
+      "action": "on_flip_button_clicked()",
+      "guard_facts": ["runtime: LV_EVENT_CLICKED delivered on btnFlip"],
+      "notes": "LV_EVENT_CLICKED on btnFlip emits EV_FLIP_PRESSED / evButtonClick. This transition is not automatable in Wokwi because the wokwi-xpt2046 part is unsupported by the Wokwi CLI; verify on physical CYD2USB hardware."
+    },
+    {
+      "from": "Flipping",
+      "to": "ResultShown",
+      "event": "evFlipComplete",
+      "guard": "esp_random_ok",
+      "action": "coin_flip(); ui_set_result(); log_coin_result()",
+      "guard_facts": ["runtime: esp_random() returns value in expected range"]
+    },
+    {
+      "from": "ResultShown",
+      "to": "Flipping",
+      "event": "evButtonClick",
+      "guard": "btnFlip_enabled",
+      "action": "on_flip_button_clicked()",
+      "guard_facts": ["runtime: LV_EVENT_CLICKED delivered on btnFlip"],
+      "notes": "LV_EVENT_CLICKED on btnFlip emits EV_FLIP_PRESSED / evButtonClick. This transition is not automatable in Wokwi because the wokwi-xpt2046 part is unsupported by the Wokwi CLI; verify on physical CYD2USB hardware."
+    },
+    {
+      "from": "ResultShown",
+      "to": "Ready",
+      "event": "evReset",
+      "guard": "ui_ready",
+      "action": "ui_set_result('Tap Flip')",
+      "guard_facts": ["runtime: ui_ready == true (definition.md §4 runtime data)", "runtime: reset request accepted"]
+    },
+    {
+      "from": "Ready",
+      "to": "Error_Display",
+      "event": "evDisplayFail",
+      "guard": "runtime_display_fail",
+      "action": "on_display_init_failed()",
+      "guard_facts": ["runtime: TFT driver reports failure"]
+    },
+    {
+      "from": "Ready",
+      "to": "Error_Touch",
+      "event": "evTouchFail",
+      "guard": "runtime_touch_fail",
+      "action": "on_touch_init_failed()",
+      "guard_facts": ["runtime: touch driver reports failure"]
+    },
+    {
+      "from": "Error_Display",
+      "to": "Halted",
+      "event": "evReboot",
+      "guard": "reboot_available",
+      "action": "reboot()",
+      "guard_facts": ["runtime: ESP32 restart mechanism available", "runtime: reboot invoked"]
+    },
+    {
+      "from": "Error_Touch",
+      "to": "Halted",
+      "event": "evReboot",
+      "guard": "reboot_available",
+      "action": "reboot()",
+      "guard_facts": ["runtime: ESP32 restart mechanism available", "runtime: reboot invoked"]
+    }
+  ],
+  "requirements_traceability": [
+    { "requirement": "Boot on CYD2USB v3 and in Wokwi without fatal errors", "covered_by": ["state Initializing", "transition [*] -> Initializing", "transition Initializing -> InitDisplay", "transition InitDisplay -> InitTouch", "transition InitTouch -> Ready", "guard framework_ready && libs_ready"] },
+    { "requirement": "Display a title, a result label, and one tappable button", "covered_by": ["state Ready", "ui_create action", "bindings.lblTitle", "bindings.lblResult", "bindings.btnFlip"] },
+    { "requirement": "Respond to a touch event by running a fair random coin flip", "covered_by": ["transition Ready -> Flipping", "transition ResultShown -> Flipping", "action coin_flip()", "guard btnFlip_enabled"] },
+    { "requirement": "Emit a deterministic serial trace COIN: Heads / COIN: Tails", "covered_by": ["action log_coin_result()", "transition Flipping -> ResultShown"] },
+    { "requirement": "Hardware RNG via esp_random()", "covered_by": ["guard esp_random_ok", "action coin_flip()"] },
+    { "requirement": "Error state for init failure", "covered_by": ["states Error_Display, Error_Touch", "transitions InitDisplay -> Error_Display, InitTouch -> Error_Touch", "action ui_show_error()"] }
+  ]
+}

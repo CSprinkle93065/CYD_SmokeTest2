@@ -1,0 +1,29 @@
+name: 'CYD_SmokeTest2 automated smoke test'
+version: 1
+author: 'MAOA QA Agent'
+
+steps:
+  # T01_BOOT: wait for the boot/setup message
+  - wait-serial: 'Coin Toss setup done'
+  - delay: 500ms
+
+  # T03_FLIP_SEQUENCE: tap the Flip Coin button twice
+  # The button is centered on the bottom half of the 240x320 portrait screen.
+  - touch:
+      part-id: lcd
+      x: 120
+      y: 210
+      duration: 100ms
+      wait: true
+  - delay: 500ms
+  - touch:
+      part-id: lcd
+      x: 120
+      y: 210
+      duration: 100ms
+      wait: true
+  - delay: 500ms
+
+  # Confirm that a coin result was logged for each tap
+  - wait-serial: 'COIN: Heads'
+  - wait-serial: 'COIN: Tails'

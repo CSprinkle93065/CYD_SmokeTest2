@@ -1,0 +1,211 @@
+{
+  "workflow_id": "wvc_20260616_043904",
+  "project_name": "CYD_SmokeTest2",
+  "version": "0.1.0",
+  "revision_type": "new_project",
+  "plan_stage": "7 — Test Planner",
+  "source_artifacts": [
+    "docs/state_machine.puml",
+    "docs/state_machine_contract.json",
+    "dependency_manifest.json",
+    "docs/definition.md"
+  ],
+  "tests": [
+    {
+      "id": "T01_BOOT",
+      "order": 1,
+      "sequence_id": "POSITIVE_PATH",
+      "starting_state": "[*]",
+      "action": "Power on / boot through app_init(), init_serial(), init_tft(), and ui_create()",
+      "expected_result": "Firmware reaches Ready state; serial prints 'Coin Toss setup done'; UI shows title 'Coin Toss', result label 'Tap Flip', and enabled 'Flip Coin' button",
+      "automation_method": "wokwi-cli run with serial assertion and screenshot diff of the Ready UI",
+      "hardware_required": false,
+      "environment": "wokwi",
+      "tags": ["boot", "smoke", "init", "serial", "positive-path"],
+      "serial_expect": "Coin Toss setup done",
+      "reset_required": false,
+      "covered_transitions": [
+        "[*] -> Initializing",
+        "Initializing -> InitDisplay",
+        "InitDisplay -> InitTouch",
+        "InitTouch -> Ready"
+      ]
+    },
+    {
+      "id": "T03_FLIP_SEQUENCE",
+      "order": 2,
+      "sequence_id": "POSITIVE_PATH",
+      "starting_state": "Ready",
+      "action": "Tap the on-screen 'Flip Coin' button twice on the target hardware",
+      "expected_result": "After the first tap the serial log shows 'UI: Flip button clicked', 'INTEGRATION: Flip pressed -> evButtonClick', and 'COIN: Heads' or 'COIN: Tails'; lblResult updates from 'Tap Flip' to 'Heads' or 'Tails'. After the second tap a new 'COIN: <result>' line is logged and lblResult updates again. btnFlip is disabled only while the state machine is in Flipping.",
+      "automation_method": "Manual tap on the CYD2USB target; observe the serial output and the on-screen result label",
+      "hardware_required": true,
+      "environment": "manual",
+      "tags": ["touch", "flip", "result", "serial", "positive-path", "hardware_required"],
+      "serial_expect": "Each tap produces 'UI: Flip button clicked', 'INTEGRATION: Flip pressed -> evButtonClick', and one 'COIN: Heads' or 'COIN: Tails' line (two COIN lines total)",
+      "reset_required": true,
+      "reset_action": "Power-cycle target device and wait for 'Coin Toss setup done'.",
+      "prerequisite": "T01_BOOT (ends in Ready)",
+      "covered_transitions": [
+        "Ready -> Flipping",
+        "Flipping -> ResultShown",
+        "ResultShown -> Flipping"
+      ]
+    },
+    {
+      "id": "T04_RESET",
+      "order": 3,
+      "sequence_id": "POSITIVE_PATH",
+      "starting_state": "ResultShown",
+      "action": "Trigger evReset (reset request when ui_ready is true)",
+      "expected_result": "System returns to Ready state; lblResult text is 'Tap Flip'; lblTitle remains 'Coin Toss'; btnFlip is visible and enabled; no error screen appears",
+      "automation_method": "manual reset button or host-driven reset pulse on the target, observed via serial and screen",
+      "hardware_required": true,
+      "environment": "manual",
+      "tags": ["reset", "state-transition", "manual"],
+      "reset_required": false,
+      "prerequisite": "T03_FLIP_SEQUENCE (ends in ResultShown)",
+      "covered_transitions": [
+        "ResultShown -> Ready"
+      ]
+    },
+    {
+      "id": "T07_RUNTIME_DISPLAY_FAIL",
+      "order": 4,
+      "sequence_id": "POSITIVE_PATH",
+      "starting_state": "Ready",
+      "action": "Trigger evDisplayFail at runtime (TFT driver reports failure after successful init)",
+      "expected_result": "System transitions from Ready to Error_Display; screen shows red full-screen 'ERR: Display init failed'; serial logs the runtime failure",
+      "automation_method": "manual hardware test by briefly disconnecting the display cable after boot or by injecting a driver fault if the driver exposes one",
+      "hardware_required": true,
+      "environment": "manual",
+      "tags": ["error", "display", "runtime", "manual"],
+      "reset_required": false,
+      "prerequisite": "T04_RESET (ends in Ready)",
+      "covered_transitions": [
+        "Ready -> Error_Display"
+      ]
+    },
+    {
+      "id": "T02_COIN_FLIP_HOST",
+      "order": 5,
+      "sequence_id": "CODE_REVIEW",
+      "starting_state": "N/A",
+      "action": "Review the coin_flip() implementation and observe the COIN: output during the on-target manual flip test",
+      "expected_result": "coin_flip() returns only coin_side_t::HEADS or coin_side_t::TAILS; no other values are possible. The implementation uses esp_random() % 2u, so the distribution is non-deterministic across runs.",
+      "automation_method": "Code review of src/state_machine/coin_logic.cpp plus manual observation of the serial COIN: output during T03_FLIP_SEQUENCE",
+      "hardware_required": false,
+      "environment": "manual",
+      "tags": ["unit", "random", "distribution", "coin_flip", "code_review"],
+      "reset_required": false,
+      "prerequisite": "Code review of src/state_machine/coin_logic.cpp; on-target observation via T03_FLIP_SEQUENCE if hardware is available",
+      "covered_transitions": [
+        "Flipping -> ResultShown (action coin_flip)"
+      ],
+      "notes": "No host/native PlatformIO test environment exists, so the original host shim approach is not feasible. The production coin_flip() implementation is verified by code review and by observing the COIN: output during the manual T03_FLIP_SEQUENCE."
+    },
+    {
+      "id": "T05_DISPLAY_INIT_FAIL",
+      "order": 6,
+      "sequence_id": "DISPLAY_INIT_ERROR",
+      "starting_state": "InitDisplay",
+      "action": "Trigger evDisplayFail (TFT_eSPI missing or tft.begin() returns false)",
+      "expected_result": "System enters Error_Display state; screen clears to black then shows a red full-screen 'ERR: Display init failed' label; lblTitle, lblResult, and btnFlip remain hidden/disabled; serial logs the error",
+      "automation_method": "manual hardware test with display disconnected, corrupted User_Setup.h, or known-bad pin mapping",
+      "hardware_required": true,
+      "environment": "manual",
+      "tags": ["error", "display", "init", "manual"],
+      "reset_required": true,
+      "reset_action": "Power-cycle the target device with the display init path forced to fail (disconnect display or corrupt User_Setup.h)",
+      "covered_transitions": [
+        "InitDisplay -> Error_Display"
+      ]
+    },
+    {
+      "id": "T09_ERROR_REBOOT_DISPLAY",
+      "order": 7,
+      "sequence_id": "DISPLAY_INIT_ERROR",
+      "starting_state": "Error_Display",
+      "action": "Trigger evReboot from Error_Display state",
+      "expected_result": "System enters Halted state and reboots; screen goes black; after restart the boot message 'Coin Toss setup done' reappears and the app returns to Ready state",
+      "automation_method": "manual reset button or host-driven reset pulse while in Error_Display",
+      "hardware_required": true,
+      "environment": "manual",
+      "tags": ["error", "reboot", "halted", "display-error", "manual"],
+      "reset_required": false,
+      "prerequisite": "T05_DISPLAY_INIT_FAIL (ends in Error_Display)",
+      "covered_transitions": [
+        "Error_Display -> Halted"
+      ]
+    },
+    {
+      "id": "T06_TOUCH_INIT_FAIL",
+      "order": 8,
+      "sequence_id": "TOUCH_INIT_ERROR",
+      "starting_state": "InitTouch",
+      "action": "Trigger evTouchFail (XPT2046 missing or touch.begin() returns false)",
+      "expected_result": "System enters Error_Touch state; screen shows a red full-screen 'ERR: Touch init failed' label; lblTitle, lblResult, and btnFlip remain hidden/disabled; serial logs the error",
+      "automation_method": "manual hardware test with touch controller disconnected or known-bad touch pin mapping",
+      "hardware_required": true,
+      "environment": "manual",
+      "tags": ["error", "touch", "init", "manual"],
+      "reset_required": true,
+      "reset_action": "Power-cycle the target device with the touch init path forced to fail (disconnect XPT2046 CS/TCLK/TDIN)",
+      "covered_transitions": [
+        "InitTouch -> Error_Touch"
+      ]
+    },
+    {
+      "id": "T10_ERROR_REBOOT_TOUCH",
+      "order": 9,
+      "sequence_id": "TOUCH_INIT_ERROR",
+      "starting_state": "Error_Touch",
+      "action": "Trigger evReboot from Error_Touch state",
+      "expected_result": "System enters Halted state and reboots; screen goes black; after restart the boot message 'Coin Toss setup done' reappears and the app returns to Ready state",
+      "automation_method": "manual reset button or host-driven reset pulse while in Error_Touch",
+      "hardware_required": true,
+      "environment": "manual",
+      "tags": ["error", "reboot", "halted", "touch-error", "manual"],
+      "reset_required": false,
+      "prerequisite": "T06_TOUCH_INIT_FAIL (ends in Error_Touch)",
+      "covered_transitions": [
+        "Error_Touch -> Halted"
+      ]
+    },
+    {
+      "id": "T08_RUNTIME_TOUCH_FAIL",
+      "order": 10,
+      "sequence_id": "RUNTIME_TOUCH_ERROR",
+      "starting_state": "Ready",
+      "action": "Trigger evTouchFail at runtime (touch driver reports failure after successful init)",
+      "expected_result": "System transitions from Ready to Error_Touch; screen shows red full-screen 'ERR: Touch init failed'; serial logs the runtime failure",
+      "automation_method": "manual hardware test by briefly disconnecting the touch cable after boot or by injecting a driver fault if the driver exposes one",
+      "hardware_required": true,
+      "environment": "manual",
+      "tags": ["error", "touch", "runtime", "manual"],
+      "reset_required": true,
+      "reset_action": "Power-cycle the target device and allow it to boot to Ready, or replay T01_BOOT, before injecting the runtime touch failure",
+      "covered_transitions": [
+        "Ready -> Error_Touch"
+      ]
+    }
+  ],
+  "execution_notes": [
+    "T01_BOOT is the only automated Wokwi test; it verifies boot to Ready state via the serial message 'Coin Toss setup done'.",
+    "T03_FLIP_SEQUENCE cannot be automated in Wokwi because the wokwi-xpt2046 part type is unsupported by the Wokwi CLI. It is executed as a manual hardware test.",
+    "T02_COIN_FLIP_HOST cannot be executed because platformio.ini has no host/native test environment. It is verified by code review of src/state_machine/coin_logic.cpp and by observing the COIN: output during the on-target manual T03_FLIP_SEQUENCE.",
+    "All other tests (T04–T10) remain manual because they require fault injection or reset actions that are not supported by the available simulator."
+  ],
+  "untestable_transitions": [
+    {
+      "transition": "Ready -> Flipping",
+      "event": "evButtonClick",
+      "reason": "Wokwi CLI does not model XPT2046 touch controller."
+    },
+    {
+      "transition": "ResultShown -> Flipping",
+      "event": "evButtonClick",
+      "reason": "Wokwi CLI does not model XPT2046 touch controller."
+    }
+  ]
+}

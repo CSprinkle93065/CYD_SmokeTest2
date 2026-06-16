@@ -1,0 +1,145 @@
+{
+  "workflow_id": "wvc_20260616_043904",
+  "project_name": "CYD_SmokeTest2",
+  "version": "0.1.0",
+  "revision_type": "new_project",
+  "probed_at": "2026-06-16T13:12:59+08:00",
+  "framework": {
+    "name": "Arduino-ESP32",
+    "version": "3.20017.241212+sha.dcc1105b",
+    "present": true,
+    "required": true,
+    "notes": "framework-arduinoespressif32 installed in ~/.platformio/packages; compatible with espressif32 platform and esp32dev board."
+  },
+  "platform": {
+    "name": "espressif32",
+    "version": "7.0.1",
+    "present": true,
+    "required": true,
+    "notes": "PlatformIO dev-platform installed; supports Arduino and ESP-IDF frameworks."
+  },
+  "board": {
+    "name": "esp32dev",
+    "version": null,
+    "present": true,
+    "required": true,
+    "notes": "Board definition supplied by espressif32 platform; equivalent to ESP32-2432S028R used on CYD2USB v3."
+  },
+  "python_packages": [
+    {
+      "name": "platformio",
+      "version": "6.1.19",
+      "present": true,
+      "required": true,
+      "notes": "Installed in workspace .venv; pio.exe located at .venv/Scripts/pio.exe."
+    },
+    {
+      "name": "pyserial",
+      "version": "3.5",
+      "present": true,
+      "required": true,
+      "notes": "Dependency of PlatformIO and esptoolpy; installed in .venv."
+    }
+  ],
+  "binaries": [
+    {
+      "name": "pio",
+      "version": "6.1.19",
+      "present": true,
+      "required": true,
+      "notes": "PlatformIO CLI executable; resolves platform, board, and library dependencies."
+    },
+    {
+      "name": "wokwi-cli",
+      "version": "0.26.1",
+      "present": true,
+      "required": true,
+      "notes": "WOKWI_CLI_TOKEN loaded from workspace .env; wokwi-cli --version returned successfully."
+    },
+    {
+      "name": "python",
+      "version": "3.14.2",
+      "present": true,
+      "required": true,
+      "notes": "Active interpreter in workspace .venv."
+    }
+  ],
+  "libraries": [
+    {
+      "name": "lvgl",
+      "version": "8.4.0",
+      "present": true,
+      "required": true,
+      "notes": "Registry package lvgl/lvgl; installed/cached and used by reference project CYD2USB_HelloLVGL."
+    },
+    {
+      "name": "TFT_eSPI",
+      "version": "2.5.43",
+      "present": true,
+      "required": true,
+      "notes": "Registry package bodmer/TFT_eSPI; installed/cached and used by reference project CYD2USB_HelloLVGL."
+    },
+    {
+      "name": "XPT2046_Touchscreen",
+      "version": "0.0.0-alpha+sha.26b691b2c8",
+      "present": true,
+      "required": true,
+      "notes": "Registry package paulstoffregen/XPT2046_Touchscreen; installed/cached and used by reference project CYD2USB_HelloLVGL."
+    }
+  ],
+  "hardware": [
+    {
+      "name": "CYD2USB v3 (ESP32-2432S028R)",
+      "version": null,
+      "present": false,
+      "required": true,
+      "notes": "No physical unit detected on this machine; only Bluetooth virtual COM ports found. Target environment includes Wokwi simulation."
+    },
+    {
+      "name": "ST7789 display",
+      "version": null,
+      "present": false,
+      "required": true,
+      "notes": "Physical 240x320 panel not present; Wokwi uses wokwi-ili9341 as a generic 240x320 framebuffer."
+    },
+    {
+      "name": "XPT2046 touch controller",
+      "version": null,
+      "present": false,
+      "required": true,
+      "notes": "Physical controller not present; Wokwi uses wokwi-xpt2046 simulation."
+    },
+    {
+      "name": "Backlight GPIO 21",
+      "version": null,
+      "present": false,
+      "required": true,
+      "notes": "Physical backlight circuit not present; simulated in wokwi/diagram.json wiring."
+    }
+  ],
+  "simulators": [
+    {
+      "name": "Wokwi CLI",
+      "version": "0.26.1",
+      "present": true,
+      "required": true,
+      "notes": "Wokwi CLI installed and authenticated; will run the project using wokwi/diagram.json."
+    }
+  ],
+  "external_programs": [
+    {
+      "name": "tool-esptoolpy",
+      "version": "2.41100.0",
+      "present": true,
+      "required": true,
+      "notes": "PlatformIO upload/flash tool for ESP32; installed in ~/.platformio/packages."
+    },
+    {
+      "name": "toolchain-xtensa-esp32",
+      "version": "8.4.0+2021r2-patch5",
+      "present": true,
+      "required": true,
+      "notes": "GCC Xtensa compiler for ESP32; installed in ~/.platformio/packages."
+    }
+  ]
+}
