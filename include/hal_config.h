@@ -29,6 +29,10 @@
 #define HAL_TOUCH_CONTROLLER    XPT2046
 #define HAL_TOUCH_SPI_FREQUENCY 2500000
 #define HAL_TOUCH_IRQ_ENABLED   0
+#define HAL_TOUCH_MIN_X         200
+#define HAL_TOUCH_MAX_X         3800
+#define HAL_TOUCH_MIN_Y         200
+#define HAL_TOUCH_MAX_Y         3800
 
 // ---------------------------------------------------------------------------
 // Serial

@@ -8,12 +8,20 @@
  */
 
 #include "ui.h"
+#include "hal_config.h"
 
 #include <Arduino.h>
 #include <lvgl.h>
 #include <XPT2046_Touchscreen.h>
 
 static XPT2046_Touchscreen* touchscreen_instance = nullptr;
+
+static int16_t clamp(int16_t v, int16_t min, int16_t max)
+{
+    if (v < min) return min;
+    if (v > max) return max;
+    return v;
+}
 
 /**
  * @brief LVGL input device read callback.
@@ -33,11 +41,13 @@ static void ui_touch_read(lv_indev_drv_t* drv, lv_indev_data_t* data)
 
     if (touchscreen_instance->touched()) {
         TS_Point p = touchscreen_instance->getPoint();
-        data->point.x = p.x;
-        data->point.y = p.y;
+        int16_t x = map(p.x, HAL_TOUCH_MIN_X, HAL_TOUCH_MAX_X, 0, HAL_DISPLAY_WIDTH - 1);
+        int16_t y = map(p.y, HAL_TOUCH_MIN_Y, HAL_TOUCH_MAX_Y, 0, HAL_DISPLAY_HEIGHT - 1);
+        data->point.x = clamp(x, 0, HAL_DISPLAY_WIDTH - 1);
+        data->point.y = clamp(y, 0, HAL_DISPLAY_HEIGHT - 1);
         data->state = LV_INDEV_STATE_PRESSED;
 
-        Serial.printf("TOUCH x=%d y=%d z=%d\n", p.x, p.y, p.z);
+        Serial.printf("TOUCH raw=(%d,%d) screen=(%d,%d) z=%d\n", p.x, p.y, data->point.x, data->point.y, p.z);
     } else {
         data->state = LV_INDEV_STATE_RELEASED;
     }

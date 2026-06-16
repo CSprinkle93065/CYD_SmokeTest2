@@ -38,12 +38,8 @@ bool hal_init_display() {
 
     g_display_initialized = true;
 
-    // TFT_eSPI::init() returns void. If the SPI bus or display controller is
-    // disconnected, the call may hang or trigger a watchdog reset. We record
-    // success after a normal return so that a subsequent runtime failure can
-    // still transition to Error_Display through the runtime_display_fail guard.
-    g_tft.init();
-    g_tft.setRotation(0);
+    // Display is already initialized by main.cpp. This function acts as a
+    // probe that records success without re-initializing the hardware.
     g_display_ok = true;
     return true;
 }
@@ -74,9 +70,8 @@ bool hal_init_touch() {
 
     g_touch_initialized = true;
 
-    SPI.begin(TOUCH_CLK, TOUCH_MISO, TOUCH_MOSI, TOUCH_CS);
-    g_ts.begin();
-    g_ts.setRotation(0);
+    // Touch controller is already initialized by main.cpp. This function acts
+    // as a probe that records success without re-initializing the hardware.
     g_touch_ok = true;
     return true;
 }

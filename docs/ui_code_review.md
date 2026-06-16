@@ -1,51 +1,59 @@
 # Assessment: Display & Input Code Critic
 
 **Project:** CYD_SmokeTest2  
-**Version:** 0.1.0  
-**Workflow ID:** wvc_20260616_043904  
+**Version:** 0.1.1  
+**Workflow ID:** wvc_20260616_130541  
 **Parallel Track:** display_input  
+**Revision Type:** bug_fix
 
 **Verdict:** GO
 
 ---
 
+## Scope
+
+This assessment covers the bug-fix changes in:
+
+- `include/hal_config.h`
+- `src/ui/touch_mapping.cpp`
+
+Plus directly dependent UI files (`src/ui/ui.h`, `src/ui/ui.cpp`) for context only. Per the bug-fix scope rule, pre-existing issues in zero-diff files are noted as informational and do not trigger a NO-GO.
+
 ## Findings
 
 ### G10.1 — All contract actions are emitted by some UI control.
 
-- [PASS] Contract action `ui_create` is implemented in `src/ui/ui.cpp` (lines 82–98) and creates `lblTitle`, `lblResult`, and `btnFlip` as required by `state_machine_contract.json`.
-- [PASS] Contract action `ui_set_result` is implemented in `src/ui/ui.cpp` (lines 100–105) and updates `lblResult`.
-- [PASS] Contract action `ui_show_error` is implemented in `src/ui/ui.cpp` (lines 107–137) and hides the normal controls while lazily creating and showing `lblError` with red full-screen text.
-- [PASS] Contract action `ui_reset` is implemented in `src/ui/ui.cpp` (lines 139–159) and restores title/result text, button visibility, and enabled state.
-- [PASS] Contract action `on_flip_button_clicked` is implemented as the LVGL `LV_EVENT_CLICKED` handler for `btnFlip` in `src/ui/ui.cpp` (lines 67–77), which forwards to the registered application callback.
-- [PASS] Touch input mapping is registered via `ui_register_touchscreen()` in `src/ui/touch_mapping.cpp` (lines 46–54), bridging the XPT2046 driver to LVGL's pointer input device.
+- [PASS] The bug-fix changes do not add, remove, or alter UI controls. `include/hal_config.h` only adds touch calibration constants; `src/ui/touch_mapping.cpp` only changes how raw coordinates are mapped to screen pixels.
+- [PASS] Contract action `ui_create` remains implemented in `src/ui/ui.cpp` (lines 82–98) and creates `lblTitle`, `lblResult`, and `btnFlip` as required by `state_machine_contract.json`.
+- [PASS] Contract action `ui_set_result` remains implemented in `src/ui/ui.cpp` (lines 100–105).
+- [PASS] Contract action `ui_show_error` remains implemented in `src/ui/ui.cpp` (lines 107–137).
+- [PASS] Contract action `ui_reset` remains implemented in `src/ui/ui.cpp` (lines 139–159).
+- [PASS] Contract action `on_flip_button_clicked` remains bound to `btnFlip` via `lv_obj_add_event_cb(..., LV_EVENT_CLICKED, ...)` in `src/ui/ui.cpp` (line 97), forwarding to the registered `flip_callback`.
 
 ### G10.2 — No business logic is embedded in UI code.
 
-- [PASS] `src/ui/ui.cpp` and `src/ui/ui.h` contain only presentation code: widget creation, styling, label updates, and event forwarding.
-- [PASS] Coin-flip business logic (`coin_flip()`), randomness (`esp_random()`), serial trace emission (`log_coin_result()`), and state transitions are located in `src/state_machine/` and are invoked through the registered `ui_flip_callback_t` rather than from the UI layer.
-- [PASS] The only `Serial` usage in UI code is diagnostic trace output (`Serial.println("UI: Flip button clicked")` and `Serial.printf("TOUCH ...")`), not business logic.
+- [PASS] `src/ui/touch_mapping.cpp` contains only coordinate transformation (`map()`, `clamp()`) and diagnostic serial logging. It does not implement coin-flip logic, randomness, state transitions, or decision-making.
+- [PASS] `include/hal_config.h` contains only compile-time hardware constants; no logic.
+- [PASS] `src/ui/ui.cpp` remains presentation-only: widget creation, styling, label updates, and event forwarding. Coin-flip business logic continues to live in `src/state_machine/` and is invoked through the registered `ui_flip_callback_t`.
 
-### G10.3 — No dynamic allocation in ISRs; GPIO access goes through HAL/pins.h; watchdog-aware.
+### G10.3 — No dynamic allocation in ISRs; GPIO access goes through the HAL/pins.h layer; watchdog-aware.
 
-- [PASS] No interrupt service routines are defined in `src/ui/`.
-- [PASS] LVGL object creation (`lv_label_create`, `lv_btn_create`) occurs in task-level `ui_create()` and `ui_show_error()`, not inside any ISR.
-- [PASS] The touch read callback `ui_touch_read()` (`src/ui/touch_mapping.cpp`, lines 25–44) uses only stack-allocated `TS_Point` and LVGL input-device structures; it does not perform heap allocation.
-- [PASS] UI code does not directly access GPIO, registers, or `pins.h` constants; hardware pin configuration is owned by the application/HAL layer that initializes and passes the `XPT2046_Touchscreen` instance.
-- [PASS] No watchdog-feed or watchdog-disable calls are required in the UI layer; the code contains no blocking loops or long-running operations that would starve the watchdog.
+- [PASS] No ISRs are defined in the modified files. `ui_touch_read()` is an LVGL input-device read callback invoked from `lv_timer_handler()` in task context, not from an interrupt.
+- [PASS] `src/ui/touch_mapping.cpp` uses only stack-allocated `TS_Point` and primitive arithmetic; no `new`/`malloc`/`free` is performed.
+- [PASS] The modified files do not access GPIO registers or `pins.h` constants directly. Touch communication uses the caller-supplied `XPT2046_Touchscreen` instance, and display dimensions are taken from `hal_config.h`.
+- [PASS] No watchdog-feed calls are introduced, and the new coordinate-mapping code contains no blocking loops or long-running operations.
 
 ### G10.4 — No blocking delays in display or touch input handling.
 
-- [PASS] No `delay()`, `vTaskDelay()`, `sleep()`, or busy-wait loops were found in `src/ui/ui.cpp` or `src/ui/touch_mapping.cpp`.
-- [PASS] The LVGL input read callback returns immediately and does not poll in a blocking fashion.
-- [PASS] Button click and touch read handlers perform only lightweight serial output and callback dispatch before returning control to LVGL.
-
----
+- [PASS] `src/ui/touch_mapping.cpp` adds no `delay()`, `vTaskDelay()`, or busy-wait loops. The read callback returns immediately after mapping the latest sample.
+- [PASS] `include/hal_config.h` has no executable code.
+- [PASS] `src/ui/ui.cpp` remains free of blocking delays in display or touch handling.
 
 ## Notes
 
-- `ui_show_error()` lazily allocates `lblError` on first use. This is acceptable because it happens in task context after LVGL initialization, not in an ISR, and it matches the contract's "do not create during normal UI creation" rule for `lblError`.
-- The UI layer correctly depends on the registered `XPT2046_Touchscreen` instance rather than constructing or configuring the touch driver itself, preserving separation of concerns.
+- The bug-fix changes correctly address the reported touch-coordinate mapping issue (BugReport_V0.1.0.md, Bug 2) by converting raw XPT2046 values to screen pixels using `map()` and clamping to `HAL_DISPLAY_WIDTH`/`HAL_DISPLAY_HEIGHT`.
+- The calibration constants added to `include/hal_config.h` (`HAL_TOUCH_MIN_X`, `HAL_TOUCH_MAX_X`, `HAL_TOUCH_MIN_Y`, `HAL_TOUCH_MAX_Y`) are configuration data, not logic.
+- `ui_show_error()` continues to lazily allocate `lblError` in task context; this is pre-existing behavior and unchanged by the bug fix.
 
 ## Outputs
 

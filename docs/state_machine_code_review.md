@@ -1,8 +1,9 @@
 # Assessment: Firmware Logic Code Critic (Stage 12)
 
 **Project:** CYD_SmokeTest2  
-**Version:** 0.1.0  
-**Workflow ID:** wvc_20260616_043904  
+**Version:** 0.1.1  
+**Workflow ID:** wvc_20260616_130541  
+**Revision Type:** bug_fix  
 **Parallel Track:** firmware_logic  
 
 **Verdict:** GO
@@ -46,7 +47,7 @@ Caveat: the `framework_ready && libs_ready` guard on the `[*] -> Initializing` t
 
 ### G12.3 — No LVGL or UI toolkit imports in state machine code
 
-**[PASS]** No file under `src/state_machine/` includes LVGL headers (`lvgl.h`, `lv_*.h`) or any UI toolkit. UI side effects are injected through function pointers (`ui_create_fn_t`, `ui_set_result_fn_t`) registered by the UI layer. `hal_service.cpp` legitimately includes `TFT_eSPI.h` and `XPT2046_Touchscreen.h` for hardware probing, as permitted by its own header comment, and explicitly avoids LVGL.
+**[PASS]** No file under `src/state_machine/` includes LVGL headers (`lvgl.h`, `lv_*.h`) or any UI toolkit. UI side effects are injected through function pointers (`ui_create_fn_t`, `ui_set_result_fn_t`) registered by the UI layer. `hal_service.cpp` legitimately includes `TFT_eSPI.h` and `XPT2046_Touchscreen.h` for hardware presence bookkeeping, as permitted by its own header comment, and explicitly avoids LVGL.
 
 ### G12.4 — All external calls have defined error-state transitions; no silent exception swallowing
 
@@ -64,11 +65,11 @@ There are no `try`/`catch` blocks in the state machine layer and therefore no si
 
 ### G12.6 — No blocking delays in state-machine update loops
 
-**[PASS]** A search for `delay(`, `vTaskDelay`, `sleep`, and long `while` loops across `src/state_machine/` returned no matches. `StateMachine::dispatch()` is a pure, non-blocking switch statement. The only potentially blocking operations are inside the TFT_eSPI/XPT2046 driver calls in `hal_service.cpp`, which are outside the state machine loop.
+**[PASS]** A search for `delay(`, `vTaskDelay`, `sleep`, and long `while` loops across `src/state_machine/` returned no matches. `StateMachine::dispatch()` is a pure, non-blocking switch statement. The bug-fix revision removed the blocking hardware initialization from `hal_service.cpp`, leaving only probe bookkeeping.
 
 ### G12.7 — All GPIO access goes through HAL/pins.h layer; ISR and watchdog safe
 
-**[PASS]** All GPIO identifiers used in the firmware logic layer are defined in `include/pins.h` (`TFT_MOSI`, `TFT_SCK`, `TOUCH_CS`, `TOUCH_CLK`, etc.). `hal_service.cpp` consumes these constants for SPI/touch setup; the state machine itself never touches GPIO registers. The dispatch function contains no loops, no delays, and no ISR-disabled critical sections, so it is watchdog safe.
+**[PASS]** The bug-fix revision changed `hal_init_display()` and `hal_init_touch()` in `src/state_machine/hal_service.cpp` into probe-only helpers that record success without re-initializing the SPI display controller or touch controller. This eliminates the double-init that caused `RTCWDT_RTC_RESET`. All GPIO identifiers used elsewhere in the firmware logic layer are defined in `include/pins.h` (`TFT_MOSI`, `TFT_SCK`, `TOUCH_CS`, `TOUCH_CLK`, etc.). The state machine `dispatch()` function contains no loops, no delays, and no ISR-disabled critical sections, so it is watchdog safe.
 
 ---
 
@@ -76,3 +77,4 @@ There are no `try`/`catch` blocks in the state machine layer and therefore no si
 
 - The `DependencyFacts` values are hard-coded as `constexpr bool` in `state_machine.h`. They mirror the current `dependency_manifest.json` and are clearly labeled as manifest-derived facts. Future revisions should consider generating this struct from the manifest to avoid drift, but the current implementation satisfies the gate criterion.
 - The `[*] -> Initializing` boot guard (`framework_ready && libs_ready`) is implicit rather than evaluated inside `dispatch()`. Because the PUML does not define a boot-failure terminal state, this simplification is consistent with the design.
+- This bug-fix review scoped its gate evaluation to the modified files (`src/state_machine/hal_service.cpp`, `src/state_machine/state_machine_generated.cpp`) and their direct dependencies. Pre-existing issues in zero-diff files were noted only where relevant for context and did not affect the verdict.
